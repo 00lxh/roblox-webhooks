@@ -5,9 +5,9 @@ local HttpService = cloneref(game:GetService("HttpService"));
 
 ----- || LIBRARY || -----
 
-local WebhookService, Methods, webhooksDict = {}, {}, {};
+local WebhookService, Methods, ObjectMethods, webhooksDict = {}, {}, {}, {};
 
-WebhookService.__index = WebhookService; Methods.__index = Methods;
+WebhookService.__index = WebhookService; Methods.__index = Methods;  ObjectMethods.__index = ObjectMethods;
 WebhookService.Presets = loadstring(game:HttpGet("https://raw.githubusercontent.com/00lxh/roblox-webhooks/refs/heads/main/presets.lua"))();
 
 local Janitor = loadstring(game:HttpGet("https://raw.githubusercontent.com/00lxh/roblox-webhooks/refs/heads/main/packages/Janitor.lua"))();
@@ -18,7 +18,7 @@ local Signal = loadstring(game:HttpGet("https://raw.githubusercontent.com/00lxh/
 function Methods:SendWebhook(data)
 
 	local __s, __d = pcall(function()
-		
+
 		local url = data._url;
 		data._url = nil;
 
@@ -42,9 +42,9 @@ end;
 
 function WebhookService.new()
 
-	local self = setmetatable({}, WebhookService);
-	self.preset = "none";
-	
+	local self = setmetatable({}, ObjectMethods);
+	self.preset = "defualt";
+
 	local janitor = Janitor.new();
 	self.janitor = janitor;
 
@@ -63,11 +63,13 @@ function WebhookService.new()
 	return self;
 end;
 
-function WebhookService:SetURL(str: string)
-	
+----- || OBJECTS METHODS || -----
+
+function ObjectMethods:SetURL(str: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 	assert(str, "Argument #1 missing or nil");
-	
+
 	assert(typeof(str) == "string", 'Invalid argument #1 to "SetURL" (string expected, got ' .. typeof(str) .. ')');
 	assert(Methods:IsString(str), 'Invalid argument #1 to "SetURL" (invalid string)');
 
@@ -75,14 +77,14 @@ function WebhookService:SetURL(str: string)
 	return self;
 end;
 
-function WebhookService:SetCustomProxy(str: string)
-	
+function ObjectMethods:SetCustomProxy(str: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 	assert(str, "Argument #1 missing or nil");
 
 	assert(typeof(str) == "string", 'Invalid argument #1 to "SetCustomProxy" (string expected, got ' .. typeof(str) .. ')');
 	assert(Methods:IsString(str), 'Invalid argument #1 to "SetCustomProxy" (invalid string)');
-	
+
 	self.custom_proxy = str;
 
 	self._url = self._url:gsub("webhook.lewisakura.moe", self.custom_proxy);
@@ -92,8 +94,8 @@ function WebhookService:SetCustomProxy(str: string)
 	return self;
 end;
 
-function WebhookService:SetPreset(str: string)
-	
+function ObjectMethods:SetPreset(str: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 	assert(str, "Argument #1 missing or nil");
 
@@ -106,24 +108,24 @@ function WebhookService:SetPreset(str: string)
 	return self;
 end;
 
-function WebhookService:SetAvatar(data: table)
-	
+function ObjectMethods:SetAvatar(data: table)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 
 	assert(data, "Argument #1 missing or nil");
 	assert(typeof(data) == "table", 'Invalid argument #1 to "SetAvatar" (table expected, got ' .. typeof(data) .. ')');
-	
+
 	assert(data.username, "Data argument #1 missing or nil");
-	
+
 	assert(typeof(data.username) == "string", 'Invalid argument #1 to "SetAvatar" (string expected, got ' .. typeof(data.username) .. ')');
 	assert(Methods:IsString(data.username), 'Invalid argument #1 to "SetAvatar" (invalid string)');
-	
+
 	if data.avatar_url then
-		
+
 		assert(typeof(data.avatar_url) == "string", 'Invalid argument #2 to "SetAvatar" (string expected, got ' .. typeof(data.avatar_url) .. ')');
 		assert(Methods:IsString(data.avatar_url), 'Invalid argument #2 to "SetAvatar" (invalid string)');
 	end;
-	
+
 	self.username = data.username;
 	self.OnChanged:Fire("Appearance", "Username", self.username);
 
@@ -133,8 +135,8 @@ function WebhookService:SetAvatar(data: table)
 	return self;
 end;
 
-function WebhookService:SendMessage(str: string)
-	
+function ObjectMethods:SendMessage(str: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 
 	assert(self._url, "Webhook url is missing or nil");
@@ -156,18 +158,18 @@ function WebhookService:SendMessage(str: string)
 	return self;
 end;
 
-function WebhookService:SendEmbed(options: any)
-	
+function ObjectMethods:SendEmbed(options: any)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
-	
+
 	assert(self._url, "Webhook url is missing or nil");
 	assert(options, "Argument #1 missing or nil");
-	
+
 	if typeof(options) ~= "table" then
 		options = { description = tostring(options); };
 	end;
-	
-	if self.preset ~= "none" then
+
+	if self.preset ~= "defualt" then
 
 		local data = {
 			_url = self._url; embeds = { typeof(self.preset) == "function" and self.preset(table.unpack(options)) or self.preset };
@@ -178,12 +180,12 @@ function WebhookService:SendEmbed(options: any)
 
 		return self;
 	end;
-	
+
 	assert(typeof(options) == "table", 'Invalid argument #1 to "SendEmbed" (table expected, got ' .. typeof(options) .. ')');
 	--assert(Methods:IsString(options.description), 'Invalid argument #1 to "SendEmbed" (invalid string)');
-	
+
 	local data = { _url = self._url; embeds = {{
-		
+
 		author = options.author or nil;
 
 		title = options.title or " "; description = options.description or " ";
@@ -198,42 +200,42 @@ function WebhookService:SendEmbed(options: any)
 		};
 
 		fields = options.fields or {};
-		
+
 		timestamp = options.timestamp or nil;
 		footer = options.footer or nil;
 	}}};
-	
+
 	if Methods:IsString(self.username) then data.username = self.username; end;
 	if Methods:IsString(self.avatar_url) then data.avatar_url = self.avatar_url; end;
-	
+
 	if options.buttons and typeof(options.buttons) == "table" then data.components = {{ type = 1; components = options.buttons; }}; end;
-	
+
 	Methods:SendWebhook(data);
 	self.OnEmbedSend:Fire(data.embeds[1]);
 
 	return self;
 end;
 
-function WebhookService:AddLinkButton(str: string, url: string)
-	
+function ObjectMethods:AddLinkButton(str: string, url: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
-	
+
 	assert(str, "Argument #1 missing or nil");
 	assert(url, "Argument #2 missing or nil");
-	
+
 	assert(typeof(str) == "string", 'Invalid argument #1 to "AddLinkButton" (string expected, got ' .. typeof(str) .. ')');
 	assert(Methods:IsString(str), 'Invalid argument #1 to "AddLinkButton" (invalid string)');
-	
+
 	assert(typeof(url) == "string", 'Invalid argument #2 to "AddLinkButton" (string expected, got ' .. typeof(url) .. ')');
 	assert(Methods:IsString(url), 'Invalid argument #2 to "AddLinkButton" (invalid string)');
 
 	return { type = 2; style = 5; label = str; url = url; };
 end;
 
-function WebhookService:BindEvent(event_name: string, __callback)
-	
+function ObjectMethods:BindEvent(event_name: string, __callback)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
-	
+
 	assert(event_name, "Argument #1 missing or nil");
 	assert(__callback, "Argument #2 missing or nil");
 
@@ -242,7 +244,7 @@ function WebhookService:BindEvent(event_name: string, __callback)
 
 	local bindable_event = self[event_name];
 	assert(bindable_event and typeof(bindable_event) == "table" and bindable_event.Connect, 'Invalid argument #1 to "BindEvent" (invalid event type)');
-	
+
 	assert(typeof(__callback) == "function", 'Invalid argument #2 to "BindEvent" (function expected, got ' .. typeof(__callback) .. ')');
 
 	self.bindedEvents[event_name] = bindable_event:Connect(function(...)
@@ -252,8 +254,8 @@ function WebhookService:BindEvent(event_name: string, __callback)
 	return self;
 end;
 
-function WebhookService:UnbindEvent(event_name: string)
-	
+function ObjectMethods:UnbindEvent(event_name: string)
+
 	assert(not self._destroyed, "This webhook is not longer valid");
 	assert(event_name, "Argument #1 missing or nil");
 
@@ -265,27 +267,27 @@ function WebhookService:UnbindEvent(event_name: string)
 
 	bindable_event:Disconnect();
 	self.bindedEvents[event_name] = nil;
-	
+
 	return self;
 end;
 
-function WebhookService:Destroy()
+function ObjectMethods:Destroy()
 
 	if self._destroyed then return; end;
 	self._destroyed = true;
-	
+
 	for name, connection in pairs(self.bindedEvents) do
-		
+
 		if connection and connection.Disconnect then connection:Disconnect(); end;
 		self.bindedEvents[name] = nil;
 	end;
-	
+
 	if self.janitor then self.janitor:Clean(); end;
-	
+
 	for uid, instance in pairs(webhooksDict) do
 		if instance == self then webhooksDict[uid] = nil; break; end;
 	end;
-	
+
 	for k in pairs(self) do
 		self[k] = nil;
 	end;
@@ -293,7 +295,7 @@ function WebhookService:Destroy()
 	setmetatable(self, nil);
 end;
 
-function WebhookService:GetWebhook()
+function ObjectMethods:GetWebhook()
 	return self;
 end;
 
